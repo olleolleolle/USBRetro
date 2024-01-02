@@ -4,6 +4,7 @@
 #include "sony_ds4.h"
 #include "sony_ds5.h"
 #include "sony_psc.h"
+#include "sony_psvr2.h"
 #include "8bitdo_bta.h"
 #include "8bitdo_m30.h"
 #include "8bitdo_pce.h"
@@ -24,6 +25,7 @@ void register_devices() {
     device_interfaces[CONTROLLER_DUALSHOCK3] = &sony_ds3_interface;
     device_interfaces[CONTROLLER_DUALSHOCK4] = &sony_ds4_interface;
     device_interfaces[CONTROLLER_DUALSENSE] = &sony_ds5_interface;
+    device_interfaces[CONTROLLER_PSVR2SENSE] = &sony_psvr2_interface;
     device_interfaces[CONTROLLER_PSCLASSIC] = &sony_psc_interface;
     device_interfaces[CONTROLLER_8BITDO_BTA] = &bitdo_bta_interface;
     device_interfaces[CONTROLLER_8BITDO_M30] = &bitdo_m30_interface;
