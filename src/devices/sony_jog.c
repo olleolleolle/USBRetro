@@ -1,6 +1,7 @@
 // sony_jog.c
 #include "sony_jog.h"
 #include "globals.h"
+#include "bsp/board_api.h"
 
 // check if device is Sony USB Jog Controller (PCVA-JC1)
 bool is_sony_jog(uint16_t vid, uint16_t pid) {
@@ -32,21 +33,21 @@ void process_sony_jog(uint8_t dev_addr, uint8_t instance, uint8_t const* report,
     } else {
       TU_LOG1(" 0 ");
     }
-    TU_LOG1(") DPad = ");
+    TU_LOG1(") DPad = [");
     if (out_report.up    ) TU_LOG1("Up ");
     if (out_report.down  ) TU_LOG1("Down ");
     if (out_report.left  ) TU_LOG1("Left ");
     if (out_report.right ) TU_LOG1("Right ");
     if (out_report.center) TU_LOG1("Center ");
 
-    TU_LOG1("Buttons = ");
+    TU_LOG1("] Buttons = [");
     if (out_report.a) TU_LOG1("A ");
     if (out_report.b) TU_LOG1("B ");
     if (out_report.c) TU_LOG1("C ");
     if (out_report.d) TU_LOG1("D ");
     if (out_report.e) TU_LOG1("E ");
     if (out_report.f) TU_LOG1("F ");
-    TU_LOG1("\r\n");
+    TU_LOG1("]\r\n");
 
     bool has_6btns = true;
     bool bttn_l = out_report.e && !out_report.center;
@@ -92,8 +93,37 @@ void process_sony_jog(uint8_t dev_addr, uint8_t instance, uint8_t const* report,
   }
 }
 
+// process usb hid output reports
+void output_sony_jog(uint8_t dev_addr, uint8_t instance, int player_index, uint8_t rumble, uint8_t leds)
+{
+  // Keyboard LED control
+  static uint8_t kbd_leds[3] = {0x80, 0, 0};
+
+
+  TU_LOG1(" output_sony_jog\n ");
+
+  // kbd_leds = KEYBOARD_LED_NUMLOCK;
+  // tuh_hid_set_report(dev_addr, instance, 0, HID_REPORT_TYPE_OUTPUT, &kbd_leds, sizeof(kbd_leds));
+  tuh_hid_send_report(dev_addr, instance, 0, &kbd_leds, sizeof(kbd_leds));
+}
+
+// process usb hid output reports
+void task_sony_jog(uint8_t dev_addr, uint8_t instance, int player_index, uint8_t rumble, uint8_t leds)
+{
+  const uint32_t interval_ms = 20;
+  static uint32_t start_ms = 0;
+
+  uint32_t current_time_ms = board_millis();
+  if (current_time_ms - start_ms >= interval_ms)
+  {
+    start_ms = current_time_ms;
+    output_sony_jog(dev_addr, instance, player_index, rumble, leds);
+  }
+}
+
 DeviceInterface sony_jog_interface = {
   .name = "Sony USB Jog Controller (PCVA-JC1)",
   .is_device = is_sony_jog,
   .process = process_sony_jog,
+  .task = task_sony_jog,
 };

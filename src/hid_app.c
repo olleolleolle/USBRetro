@@ -56,6 +56,7 @@ void hid_app_task(uint8_t rumble, uint8_t leds)
       case CONTROLLER_GAMECUBE: // send GameCube WiiU/Switch Adapter rumble
       case CONTROLLER_KEYBOARD: // send Keyboard LEDs
       case CONTROLLER_SWITCH: // send Switch Pro init, LED and rumble commands
+      case CONTROLLER_SONY_JOG:
         device_interfaces[ctrl_type]->task(dev_addr, instance, player_index, rumble, leds);
         break;
       default:
