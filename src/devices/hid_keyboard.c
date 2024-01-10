@@ -258,6 +258,7 @@ void process_hid_keyboard(uint8_t dev_addr, uint8_t instance, uint8_t const* hid
   bool const is_shift = report->modifier & (KEYBOARD_MODIFIER_LEFTSHIFT | KEYBOARD_MODIFIER_RIGHTSHIFT);
   bool const is_ctrl = report->modifier & (KEYBOARD_MODIFIER_LEFTCTRL | KEYBOARD_MODIFIER_RIGHTCTRL);
   bool const is_alt = report->modifier & (KEYBOARD_MODIFIER_LEFTALT | KEYBOARD_MODIFIER_RIGHTALT);
+  bool is_backet_left = false;
 
   // parse 3 keycode bytes into single word to return
   uint32_t reportKeys = report->keycode[0] | (report->keycode[1] << 8) | (report->keycode[2] << 16);
@@ -283,45 +284,44 @@ void process_hid_keyboard(uint8_t dev_addr, uint8_t instance, uint8_t const* hid
     hid_kb_devices[dev_addr].instances[instance].ready = true;
   }
 
+#ifndef CONFIG_PCE
+  if (report->modifier & KEYBOARD_MODIFIER_LEFTSHIFT) btns_two = true; // B
+#endif
+
   //------------- example code ignore control (non-printable) key affects -------------//
   for(uint8_t i=0; i<6; i++)
   {
     if ( report->keycode[i] )
     {
-      if (report->keycode[i] == HID_KEY_ESCAPE || report->keycode[i] == HID_KEY_EQUAL) btns_run = true; // Start
-      if (report->keycode[i] == HID_KEY_P || report->keycode[i] == HID_KEY_MINUS) btns_sel = true; // Select / Z
+      if (report->keycode[i] == HID_KEY_BACKSPACE) btns_run = true; // Start
+      if (report->keycode[i] == HID_KEY_F) btns_sel = true; // Select / Z
 #ifdef CONFIG_PCE
       // more ideal PCE enter button for SuperSD3 Menu
       if (report->keycode[i] == HID_KEY_J || report->keycode[i] == HID_KEY_ENTER) btns_two = true; // II
       if (report->keycode[i] == HID_KEY_K || report->keycode[i] == HID_KEY_BACKSPACE) btns_one = true; // I
 #else
-      if (report->keycode[i] == HID_KEY_J || report->keycode[i] == HID_KEY_ENTER) btns_one = true; // A
-      if (report->keycode[i] == HID_KEY_K || report->keycode[i] == HID_KEY_BACKSPACE) btns_two = true; // B
+      if (report->keycode[i] == HID_KEY_SPACE) btns_one = true; // A
 #endif
-      if (report->keycode[i] == HID_KEY_L) btns_three = true; // X
-      if (report->keycode[i] == HID_KEY_SEMICOLON) btns_four = true; // Y
-      if (report->keycode[i] == HID_KEY_U || report->keycode[i] == HID_KEY_PAGE_UP) btns_five = true; // L
-      if (report->keycode[i] == HID_KEY_I || report->keycode[i] == HID_KEY_PAGE_DOWN) btns_six = true; // R
+      if (report->keycode[i] == HID_KEY_Q) btns_three = true; // X
+      if (report->keycode[i] == HID_KEY_U) btns_four = true; // Y
+      if (report->keycode[i] == HID_KEY_O) btns_five = true; // L
+      if (report->keycode[i] == HID_KEY_E) btns_six = true; // R
 
       // HAT SWITCH
       switch (report->keycode[i])
       {
-      case HID_KEY_1:
       case HID_KEY_ARROW_UP:
           hatSwitchKeys |= (0x1 << (4 * hatIndex));
           hatIndex++;
           break;
-      case HID_KEY_3:
       case HID_KEY_ARROW_DOWN:
           hatSwitchKeys |= (0x2 << (4 * hatIndex));
           hatIndex++;
           break;
-      case HID_KEY_2:
       case HID_KEY_ARROW_LEFT:
           hatSwitchKeys |= (0x4 << (4 * hatIndex));
           hatIndex++;
           break;
-      case HID_KEY_4:
       case HID_KEY_ARROW_RIGHT:
           hatSwitchKeys |= (0x8 << (4 * hatIndex));
           hatIndex++;
@@ -356,19 +356,19 @@ void process_hid_keyboard(uint8_t dev_addr, uint8_t instance, uint8_t const* hid
       // RIGHT STICK
       switch (report->keycode[i])
       {
-      case HID_KEY_M:
+      case HID_KEY_I:
           rightStickKeys |= (0x1 << (4 * rightIndex));
           rightIndex++;
           break;
-      case HID_KEY_PERIOD:
+      case HID_KEY_K:
           rightStickKeys |= (0x2 << (4 * rightIndex));
           rightIndex++;
           break;
-      case HID_KEY_COMMA:
+      case HID_KEY_J:
           rightStickKeys |= (0x4 << (4 * rightIndex));
           rightIndex++;
           break;
-      case HID_KEY_SLASH:
+      case HID_KEY_L:
           rightStickKeys |= (0x8 << (4 * rightIndex));
           rightIndex++;
           break;
@@ -407,17 +407,21 @@ void process_hid_keyboard(uint8_t dev_addr, uint8_t instance, uint8_t const* hid
 
         // fflush(stdout); // flush right away, else nanolib will wait for newline
       }
+
+      if (!is_backet_left && report->keycode[i] == HID_KEY_BRACKET_LEFT) {
+        is_backet_left = true;
+      }
     }
   }
 
   // calculate left stick angle degrees
   if (leftStickKeys) {
-    int leftIntensity = is_shift ? KB_ANALOG_MID : KB_ANALOG_MAX;
+    int leftIntensity = (report->modifier & KEYBOARD_MODIFIER_LEFTCTRL) ? KB_ANALOG_MID : KB_ANALOG_MAX;
     calculate_coordinates(leftStickKeys, leftIntensity, &analog_left_x, &analog_left_y);
   }
 
   if (rightStickKeys) {
-    int rightIntensity = is_shift ? KB_ANALOG_MID : KB_ANALOG_MAX;
+    int rightIntensity = is_backet_left ? KB_ANALOG_MID : KB_ANALOG_MAX;
     calculate_coordinates(rightStickKeys, rightIntensity, &analog_right_x, &analog_right_y);
   }
 
